@@ -17,13 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,8 +37,9 @@ import com.liomix.animedb.core.ui.model.OutputMode
 import com.liomix.animedb.core.ui.model.OutputStatus
 
 /**
- * 底部输出窗口：固定在屏幕下方，可展开/收起，支持结构化与原始 JSON 两种视图。
+ * 底部输出窗口：固定在屏幕下方。
  *
+ * 一行头：状态点 + 标题 + 「结构化 / JSON」切换；拖动顶部把手可切换高度。
  * 结构化内容由各数据源模块提供（[structured]），这里只负责窗口外壳与滚动。
  */
 @Composable
@@ -54,7 +49,6 @@ fun OutputPanel(
     onModeChange: (OutputMode) -> Unit,
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
-    onCopy: () -> Unit,
     modifier: Modifier = Modifier,
     resetKey: Any? = null,
     structured: @Composable ColumnScope.() -> Unit,
@@ -75,12 +69,12 @@ fun OutputPanel(
         shadowElevation = 8.dp,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // 拖拽条：点击即可在「半屏 / 全屏」之间切换。
+            // 拖拽条：点击在「半屏 / 大半个屏」之间切换。
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onToggleExpanded)
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 7.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
@@ -95,80 +89,39 @@ fun OutputPanel(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(dotColor),
-                )
-                Column(
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .weight(1f),
-                ) {
-                    Text(
-                        text = output.title.ifBlank { "输出" },
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (output.meta.isNotBlank()) {
-                        Text(
-                            text = output.meta,
-                            style = MonoTextStyle,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-                IconButton(onClick = onCopy) {
-                    Icon(
-                        imageVector = Icons.Outlined.ContentCopy,
-                        contentDescription = "复制报文",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                IconButton(onClick = onToggleExpanded) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Outlined.ExpandMore else Icons.Outlined.ExpandLess,
-                        contentDescription = if (expanded) "收起输出" else "展开输出",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(start = 16.dp, end = 12.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(7.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(dotColor),
+                )
+                Text(
+                    text = output.title.ifBlank { "输出" },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
                 SegmentedControl(
                     options = listOf("结构化", "JSON"),
                     selectedIndex = mode.ordinal,
                     onSelect = { onModeChange(OutputMode.entries[it]) },
-                    modifier = Modifier.width(148.dp),
+                    modifier = Modifier.width(126.dp),
+                    height = 28,
                 )
-                if (output.json.isNotBlank()) {
-                    InfoChip(label = "${output.json.length} 字符")
-                }
             }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(top = 10.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
                 val structuredScroll = rememberScrollState()
                 // 新报文到达时回到顶部，避免沿用上一次的滚动位置。
@@ -236,7 +189,7 @@ private fun HintBlock(text: String) {
 
 /**
  * 页面骨架：顶部控制区固定、中间接口目录、底部输出窗口。
- * 输出窗口高度随 [panelExpanded] 在 42% / 68% 之间过渡。
+ * 输出窗口高度随 [panelExpanded] 在 38% / 72% 之间过渡。
  */
 @Composable
 fun ConsoleScaffold(
@@ -247,7 +200,7 @@ fun ConsoleScaffold(
     output: @Composable (Modifier) -> Unit,
 ) {
     val fraction by animateFloatAsState(
-        targetValue = if (panelExpanded) 0.68f else 0.42f,
+        targetValue = if (panelExpanded) 0.72f else 0.38f,
         label = "output-panel-height",
     )
     Column(modifier = modifier.fillMaxSize()) {

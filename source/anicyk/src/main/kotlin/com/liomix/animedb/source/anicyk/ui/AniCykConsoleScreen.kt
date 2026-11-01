@@ -32,7 +32,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -47,7 +46,6 @@ import com.liomix.animedb.core.ui.component.PillTone
 import com.liomix.animedb.core.ui.component.SegmentedControl
 import com.liomix.animedb.core.ui.component.StatusPill
 import com.liomix.animedb.core.ui.model.OutputMode
-import com.liomix.animedb.core.ui.util.copyToClipboard
 import com.liomix.animedb.source.anicyk.AniCykConsoleViewModel
 import com.liomix.animedb.source.anicyk.CykUiState
 import com.liomix.animedb.source.anicyk.data.CykApi
@@ -104,8 +102,6 @@ fun AniCykConsoleScreen(
     onCloseParams: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-
     ConsoleScaffold(
         panelExpanded = state.panelExpanded,
         modifier = modifier,
@@ -156,7 +152,6 @@ fun AniCykConsoleScreen(
                 onModeChange = onModeChange,
                 expanded = state.panelExpanded,
                 onToggleExpanded = onTogglePanel,
-                onCopy = { context.copyToClipboard("animedb", state.output.json) },
                 modifier = outputModifier,
             ) {
                 CykStructuredContent(view = state.view)

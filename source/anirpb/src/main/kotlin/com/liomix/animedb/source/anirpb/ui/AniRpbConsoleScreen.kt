@@ -47,7 +47,6 @@ import com.liomix.animedb.core.ui.component.PillTone
 import com.liomix.animedb.core.ui.component.SegmentedControl
 import com.liomix.animedb.core.ui.component.StatusPill
 import com.liomix.animedb.core.ui.model.OutputMode
-import com.liomix.animedb.core.ui.util.copyToClipboard
 import com.liomix.animedb.source.anirpb.AniRpbConsoleViewModel
 import com.liomix.animedb.source.anirpb.RpbChannel
 import com.liomix.animedb.source.anirpb.RpbUiState
@@ -115,8 +114,6 @@ fun AniRpbConsoleScreen(
     onCloseParams: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-
     ConsoleScaffold(
         panelExpanded = state.panelExpanded,
         modifier = modifier,
@@ -173,7 +170,6 @@ fun AniRpbConsoleScreen(
                 onModeChange = onModeChange,
                 expanded = state.panelExpanded,
                 onToggleExpanded = onTogglePanel,
-                onCopy = { context.copyToClipboard("animedb", state.output.json) },
                 modifier = outputModifier,
                 resetKey = state.probeDone,
             ) {
