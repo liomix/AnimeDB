@@ -7,6 +7,18 @@ android {
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // AniRpb 的原生传输只有 arm64-v8a 的 so；直接限定 ABI，避免其他架构装上后崩溃。
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // libzhuque.so 会 dlopen 同目录的 libaddressing_ffi.so，需传统解压安装。
+            useLegacyPackaging = true
+        }
     }
 }
 

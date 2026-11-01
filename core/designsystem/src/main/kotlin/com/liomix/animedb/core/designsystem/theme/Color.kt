@@ -34,3 +34,20 @@ val OnSurfaceDark = Color(0xFFE3E3E6)
 val OnSurfaceVariantDark = Color(0xFFADB2B9)
 val OutlineDark = Color(0xFF44474C)
 val ErrorDark = Color(0xFFFFB4AB)
+
+// ===== 测试台语义色（成功 / 警告 / 运行中） =====
+
+val SuccessLight = Color(0xFF1B7F4B)
+val SuccessContainerLight = Color(0xFFD5F3E1)
+
+val WarningLight = Color(0xFF9A5B00)
+val WarningContainerLight = Color(0xFFFFEBC7)
+
+val SuccessDark = Color(0xFF57D9A3)
+val SuccessContainerDark = Color(0xFF0D3325)
+
+val WarningDark = Color(0xFFF5C26B)
+val WarningContainerDark = Color(0xFF3A2A0B)
+
+val MonoSurfaceLight = Color(0xFFF1F3F7)
+val MonoSurfaceDark = Color(0xFF101216)

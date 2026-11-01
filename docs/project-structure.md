@@ -8,33 +8,31 @@
 ```text
 app ──────────────► feature:console ─────► core:*
  │                        │
- └──────────────────────► source:anirpb / source:anicyk ──► core:source
+ └──────────────────────► source:anirpb / source:anicyk ──► core:source / core:ui
 ```
 
 - `app` 只做装配：Application / Activity / NavHost，不 import 任何页面实现。
 - `feature:console` 提供 Tab 容器，不认识任何具体数据源。
-- `source:*` 一个数据源一个模块，同时承载「数据源实现」与「该数据源的测试页」。
+- `source:*` 一个数据源一个模块：数据客户端 + 接口目录 + 测试页。
 - `core:*` 不依赖上层，也不依赖任何具体数据源。
 
 ## 2. 模块职责
 
-| 模块 | 职责 | 当前状态 |
-|------|------|----------|
-| `:app` | `AnimeDbApp` / `MainActivity` / `AnimeDbNavHost` | 已完成装配 |
-| `:core:model` | 领域模型（Anime / Episode / 报文体等） | 空模块，待接入 |
-| `:core:common` | `@Dispatcher` 调度器、通用扩展 | 空模块，待接入 |
-| `:core:designsystem` | 色板 / 字体 / `AnimeDbTheme` | 已完成 |
-| `:core:ui` | 共享 Compose 组件（`SourcePlaceholder`） | 占位组件 |
-| `:core:navigation` | `ConsoleDestination` / `Navigator` / `EntryProviderInstaller` | 已完成 |
-| `:core:network` | OkHttp / Retrofit / 报文抓取 | 空模块，待接入 |
-| `:core:source` | 数据源测试页契约 `SourceTestTab` | 已完成契约 |
-| `:feature:console` | 顶部 Tab 容器 + 空态 | 已完成 |
-| `:source:anirpb` | AniRpb 数据源 + 测试页 | 占位 |
-| `:source:anicyk` | AniCyk 数据源 + 测试页 | 占位 |
+| 模块 | 职责 |
+|------|------|
+| `:app` | `AnimeDbApp` / `MainActivity` / `AnimeDbNavHost`；abiFilters + jniLibs 打包 |
+| `:core:model` | 领域模型（预留） |
+| `:core:common` | `@Dispatcher` 调度器；`formatBytes/formatMs/formatCount/hostLabel/prettyJson` |
+| `:core:designsystem` | 色板 / 字体 / `AnimeDbTheme`；`ConsoleColors`（成功、警告、等宽底色） |
+| `:core:ui` | 测试台组件：`ConsoleScaffold`、`OutputPanel`、`ApiCatalogRow`、`SegmentedControl`、`StatusPill`、`InfoChip`、`MethodBadge`、`StatTile`、`JsonBlock`、`CoverImage`、剪贴板/打开链接 |
+| `:core:navigation` | `ConsoleDestination` / `Navigator` / `EntryProviderInstaller` |
+| `:core:network` | 预留（HTTP 基础设施，当前两个数据源各自实现） |
+| `:core:source` | `SourceTestTab` 契约 |
+| `:feature:console` | 顶部 Tab 容器、空态 |
+| `:source:anirpb` | `ZhuqueTransport`（UDS + ZQF1 + AES-GCM）、JNI 桥、33 个 op 目录、解析器、ViewModel、测试页、`jniLibs/arm64-v8a` |
+| `:source:anicyk` | `AniCykClient`（HttpURLConnection + 4 节点降级 + AES-CBC）、14 个接口目录、解析器、ViewModel、测试页 |
 
 ## 3. Tab 注册机制
-
-顶部 Tab 不写死在容器里，而是由各数据源模块通过 Hilt 多重绑定注入：
 
 ```kotlin
 // core:source
@@ -46,27 +44,47 @@ interface SourceTestTab {
     @Composable fun Content(modifier: Modifier)
 }
 
-// source:anirpb
+// source:anirpb/di
 @Module @InstallIn(SingletonComponent::class)
 abstract class AniRpbModule {
     @Binds @IntoSet abstract fun bind(tab: AniRpbTestTab): SourceTestTab
 }
 ```
 
-`:feature:console` 的 `ConsoleViewModel` 注入 `Set<SourceTestTab>`，按 `order` 排序渲染。
-由此：**新增数据源 = 新增一个模块，容器与 app 都不用改**。
+`ConsoleViewModel` 注入 `Set<SourceTestTab>`，按 `order` 排序渲染。
 
-## 4. 导航
+## 4. 测试页结构（两个数据源共用）
 
-- `Navigator`（`@ActivityRetainedScoped`）持有 `SnapshotStateList<NavKey>` 返回栈，`NavDisplay` 直接消费。
-- 顶级目的地只有 `ConsoleDestination`；数据源切换是页面内 Tab 状态，不占用返回栈。
-- 二级页面（如请求详情、报文对比）后续以 `@Serializable` 路由压栈，并在对应 `:source:*` 或
-  `:feature:*` 模块内注册。
+```
+ConsoleScaffold(panelExpanded)
+├─ header   ← 状态胶囊 / 频道或关键词 / 快捷运行 / 提示行
+├─ catalog  ← LazyColumn：分组 + ApiCatalogRow（点行编辑参数，▶ 一键运行）
+└─ output   ← OutputPanel：固定在底部，42% ⇄ 68% 高度切换
+              标题 + meta（frame/code/字节/耗时）+ 状态点
+              [结构化 | JSON] + 复制
+              结构化内容由各数据源自行渲染，未识别的接口回退 JSON
+```
 
-## 5. 下一步（占位待实现）
+- 输出窗口始终在最下方，新报文到达时自动回到顶部。
+- 参数编辑走 `ModalBottomSheet`：JSON 文本框 + 恢复默认 + 运行，参数先做 JSON 校验。
+- 结构化渲染只覆盖高频接口，其余回退 JSON，新增 op 不需要改解析器。
 
-1. `:core:source` 增加接口探针模型：`SourceProbe` / `ProbeRequest` / `ProbeResult`（状态、耗时、原始报文）。
-2. `:core:network` 增加 HTTP 执行引擎与请求录制，供 HTTP 类数据源复用。
-3. `:source:anirpb` 接入 `ZhuqueTransport`（原生加密通道），测试页展示握手 / op / 解密后 JSON。
-4. `:source:anicyk` 确认协议与鉴权后接入，测试页与 AniRpb 同构。
-5. 数据源数量变多后，`ConsoleTopBar` 的 `TabRow` 换成 `PrimaryScrollableTabRow`。
+## 5. AniRpb 链路要点
+
+- `ZhuqueTransport`：`Os.setenv(ZQ_FILES_DIR)` → `loadLibrary(addressing_ffi/zhuque)` → `nativeDeviceContextInit(DeviceContext JSON)` → `nativeSessionKey()` 拿 32B 帧密钥 → UDS `ZQF1` 帧（AES-256-GCM）。
+- `libzhuque.so` / `libaddressing_ffi.so` 放在 `source/anirpb/src/main/jniLibs/arm64-v8a/`，`app` 侧 `useLegacyPackaging = true` + `abiFilters = arm64-v8a`。
+- JNI 桥 `com.yy.myuko.component.ktor.addressing.ZhuqueSessionNativeLib` 包名/类名不可改。
+- **bootstrap**：首次业务调用前原生层要跑寻址 + MMTLS 握手，期间回 `503`（`tunnel-unreachable` / `op dormant`）。ViewModel 会轮询 `type.listActive` 直到 200，单次运行遇到同类 503 也会自动重试最多 3 次。
+
+## 6. AniCyk 链路要点
+
+- 4 个明文 HTTP 节点串行降级，2xx/4xx 即视为节点可用。
+- 头部：`app-version`、`appId`、`deviceId`、`imei`、`cvb`（时间戳 Base64）。
+- 响应以 `CYK2026` 开头 → AES-256-CBC 解密（key = SHA-256("%ZZJ_ciyuan_2025!@")）；`Dddm` 开头 → Base64 明文。
+
+## 7. 下一步
+
+1. `:core:network` 抽出通用 HTTP 执行引擎与请求录制，供后续 HTTP 类数据源复用。
+2. 请求历史（最近 N 次调用）与报文对比。
+3. 更多 op 的结构化渲染；把全量探测结果导出为文件。
+4. Tab 数量变多后，`ConsoleTopBar` 换 `PrimaryScrollableTabRow`。

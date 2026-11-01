@@ -1,7 +1,7 @@
 package com.liomix.animedb.source.anirpb.di
 
 import com.liomix.animedb.core.source.SourceTestTab
-import com.liomix.animedb.source.anirpb.AniRpbTestTab
+import com.liomix.animedb.source.anirpb.ui.AniRpbTestTab
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

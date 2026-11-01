@@ -9,6 +9,10 @@ android {
 
 dependencies {
     api(project(":core:designsystem"))
+    implementation(project(":core:common"))
+
+    api(libs.coil.compose)
+    api(libs.coil.network.okhttp)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

@@ -1,7 +1,7 @@
 package com.liomix.animedb.source.anicyk.di
 
 import com.liomix.animedb.core.source.SourceTestTab
-import com.liomix.animedb.source.anicyk.AniCykTestTab
+import com.liomix.animedb.source.anicyk.ui.AniCykTestTab
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
